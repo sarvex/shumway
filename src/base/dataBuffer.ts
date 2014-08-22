@@ -119,8 +119,8 @@ module Shumway.ArrayUtilities {
     private _i32View: Int32Array;
     private _dataView: DataView;
 
-    private _bitBuffer: number;
-    private _bitLength: number;
+   _bitBuffer: number;
+   _bitLength: number;
 
     private static _arrayBufferPool = new ArrayBufferPool();
     
@@ -128,7 +128,7 @@ module Shumway.ArrayUtilities {
       this._buffer = new ArrayBuffer(initialSize);
       this._length = 0;
       this._position = 0;
-      this._updateViews();
+      this._updateViews(0, initialSize);
       this._littleEndian = false; // AS3 is bigEndian by default.
       this._bitBuffer = 0;
       this._bitLength = 0;
@@ -139,7 +139,7 @@ module Shumway.ArrayUtilities {
       dataBuffer._buffer = buffer;
       dataBuffer._length = length === -1 ? buffer.byteLength : length;
       dataBuffer._position = 0;
-      dataBuffer._updateViews();
+      dataBuffer._updateViews(0, buffer.byteLength);
       dataBuffer._littleEndian = false; // AS3 is bigEndian by default.
       dataBuffer._bitBuffer = 0;
       dataBuffer._bitLength = 0;
@@ -175,13 +175,27 @@ module Shumway.ArrayUtilities {
       }
     }
 
-    private _updateViews() {
-      this._i8View = new Int8Array(this._buffer);
-      this._u8View = new Uint8Array(this._buffer);
+    private _updateViews(offset: number, length: number) {
+      this._i8View = new Int8Array(this._buffer, offset, length);
+      this._u8View = new Uint8Array(this._buffer, offset, length);
       if ((this._buffer.byteLength & 0x3) === 0) {
-        this._i32View = new Int32Array(this._buffer);
+        this._i32View = new Int32Array(this._buffer, offset, length);
       }
-      this._dataView = new DataView(this._buffer);
+      this._dataView = new DataView(this._buffer, offset, length);
+    }
+
+    subbuffer(start: number = 0, end: number = this._length): DataBuffer {
+      var length = end - start;
+      var dataBuffer: DataBuffer = Object.create(DataBuffer.prototype);
+      this._ensureCapacity(end);
+      dataBuffer._buffer = this._buffer;
+      dataBuffer._length = length;
+      dataBuffer._position = 0;
+      dataBuffer._updateViews(start, length);
+      dataBuffer._littleEndian = this._littleEndian;
+      dataBuffer._bitBuffer = this._bitBuffer;
+      dataBuffer._bitLength = this._bitLength;
+      return dataBuffer;
     }
 
     getBytes(): Uint8Array {
@@ -198,7 +212,7 @@ module Shumway.ArrayUtilities {
         var newBuffer = DataBuffer._arrayBufferPool.acquire(newLength);
         var curentView = this._i8View;
         this._buffer = newBuffer;
-        this._updateViews();
+        this._updateViews(0, newBuffer.byteLength);
         this._i8View.set(curentView);
         DataBuffer._arrayBufferPool.release(currentBuffer);
       }
@@ -795,6 +809,7 @@ module Shumway.ArrayUtilities {
           var len = lengthCodes[sym] + readBits(input, lengthExtraBits[sym]);
           sym = readCode(input, distanceTable);
           var distance = distanceCodes[sym] + readBits(input, distanceExtraBits[sym]);
+          output._ensureCapacity(output.position + len);
           output.writeBytes(output, output.position - distance, len);
         }
       }
@@ -829,7 +844,7 @@ module Shumway.ArrayUtilities {
       return (b << 16) | a;
     }
 
-    private _compress(algorithm: string): void {
+    _compress(algorithm: string): void {
       algorithm = asCoerceString(algorithm);
       DataBuffer._initializeTables();
 
@@ -877,7 +892,7 @@ module Shumway.ArrayUtilities {
       this._position = 0;
     }
 
-    private _uncompress(algorithm: string): void {
+    _uncompress(algorithm: string): void {
       algorithm = asCoerceString(algorithm);
       DataBuffer._initializeTables();
 

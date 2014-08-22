@@ -18,6 +18,7 @@
 
 /// <reference path='references.ts'/>
 module Shumway.SWF.Parser {
+
   function defineShape($bytes, $stream, output, swfVersion, tagCode) {
     output || (output = {});
     output.id = readUi16($bytes, $stream);
@@ -1376,7 +1377,7 @@ module Shumway.SWF.Parser {
     } while (!eos);
   }
 
-  export var tagHandler:any = {
+  export var tagHandler: any = {
     /* End */                            0: undefined,
     /* ShowFrame */                      1: undefined,
     /* DefineShape */                    2: defineShape,
@@ -1444,24 +1445,24 @@ module Shumway.SWF.Parser {
     /* DefineFont4 */                   91: defineFont4
   };
 
-
-  export function readHeader($bytes, $stream, $, swfVersion, tagCode) {
-    $ || ($ = {});
-    var $0: any = $.bbox = {};
-    align($bytes, $stream);
-    var bits = readUb($bytes, $stream, 5);
-    var xMin = readSb($bytes, $stream, bits);
-    var xMax = readSb($bytes, $stream, bits);
-    var yMin = readSb($bytes, $stream, bits);
-    var yMax = readSb($bytes, $stream, bits);
-    $0.xMin = xMin;
-    $0.xMax = xMax;
-    $0.yMin = yMin;
-    $0.yMax = yMax;
-    align($bytes, $stream);
-    var frameRateFraction = readUi8($bytes, $stream);
-    $.frameRate = readUi8($bytes, $stream) + frameRateFraction / 256;
-    $.frameCount = readUi16($bytes, $stream);
-    return $;
+  export function readHeader(stream: DataBuffer, output: any, swfVersion: number, tagCode: number) {
+    output || (output = {});
+    var bbox = output.bbox = {};
+    stream.align();
+    var bits = stream.readUnsignedBits(5);
+    var xMin = stream.readBits(bits);
+    var xMax = stream.readBits(bits);
+    var yMin = stream.readBits(bits);
+    var yMax = stream.readBits(bits);
+    bbox.xMin = xMin;
+    bbox.xMax = xMax;
+    bbox.yMin = yMin;
+    bbox.yMax = yMax;
+    stream.align();
+    var frameRateFraction = stream.readUnsignedByte();
+    output.frameRate = stream.readUnsignedByte() + frameRateFraction / 256;
+    output.frameCount = stream.readUnsignedShort();
+    return output;
   }
+
 }

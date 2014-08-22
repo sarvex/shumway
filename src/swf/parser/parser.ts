@@ -18,9 +18,10 @@
 
 /// <reference path='references.ts'/>
 module Shumway.SWF.Parser {
+  import DataBuffer = Shumway.ArrayUtilities.DataBuffer;
+
   function readTags(context, stream, swfVersion, final, onprogress, onexception) {
     var tags = context.tags;
-    var bytes = stream.bytes;
     var lastSuccessfulPosition;
 
     var tag: ISwfTagData = null;
@@ -30,13 +31,12 @@ module Shumway.SWF.Parser {
     }
 
     try {
-      while (stream.pos < stream.end) {
+      while (stream.position < stream.length) {
         // this loop can be interrupted at any moment by StreamNoDataError
         // exception, trying to recover data/position below when thrown
-        lastSuccessfulPosition = stream.pos;
+        lastSuccessfulPosition = stream.position;
 
-        stream.ensure(2);
-        var tagCodeAndLength = readUi16(bytes, stream);
+        var tagCodeAndLength = stream.readUnsignedShort();
         if (!tagCodeAndLength) {
           // end of tags
           final = true;
@@ -46,34 +46,31 @@ module Shumway.SWF.Parser {
         var tagCode = tagCodeAndLength >> 6;
         var length = tagCodeAndLength & 0x3f;
         if (length === 0x3f) {
-          stream.ensure(4);
-          length = readUi32(bytes, stream);
+          length = stream.readUnsignedInt();
         }
 
         if (tag) {
           if (tagCode === 1 && tag.code === 1) {
             // counting ShowFrame
             tag.repeat++;
-            stream.pos += length;
+            stream.position += length;
             continue;
           }
           tags.push(tag);
           if (onprogress && tag.id !== undefined) {
-            context.bytesLoaded = (context.bytesTotal * stream.pos / stream.end) | 0;
+            context.bytesLoaded = (context.bytesTotal * stream.position / stream.length) | 0;
             onprogress(context);
           }
           tag = null;
         }
 
-        stream.ensure(length);
-        var substream = stream.substream(stream.pos, stream.pos += length);
-        var subbytes = substream.bytes;
+        var substream = stream.subbuffer(stream.position, stream.position += length);
         var nextTag: ISwfTagData = { code: tagCode };
 
         if (tagCode === SwfTag.CODE_DEFINE_SPRITE) {
           nextTag.type = 'sprite';
-          nextTag.id = readUi16(subbytes, substream);
-          nextTag.frameCount = readUi16(subbytes, substream);
+          nextTag.id = substream.readUnsignedShort();
+          nextTag.frameCount = substream.readUnsignedShort()
           nextTag.tags = [];
           readTags(nextTag, substream, swfVersion, true, null, null);
         } else if (tagCode === 1) {
@@ -81,13 +78,13 @@ module Shumway.SWF.Parser {
         } else {
           var handler = tagHandler[tagCode];
           if (handler) {
-            handler(subbytes, substream, nextTag, swfVersion, tagCode);
+            handler(substream, nextTag, swfVersion, tagCode);
           }
         }
 
         tag = nextTag;
       }
-      if ((tag && final) || (stream.pos >= stream.end)) {
+      if ((tag && final) || (stream.position >= stream.length)) {
         if (tag) {
           tag.finalTag = true; // note: 'eot' is reserved by handlers
           tags.push(tag);
@@ -105,7 +102,7 @@ module Shumway.SWF.Parser {
         throw e;
       }
       // recovering the stream state
-      stream.pos = lastSuccessfulPosition;
+      stream.position = lastSuccessfulPosition;
       context._readTag = tag;
     }
   }
@@ -169,8 +166,8 @@ module Shumway.SWF.Parser {
       return this._buffer.subarray(0, this._pos);
     }
 
-    createStream() {
-      return new Stream(this.arrayBuffer, 0, this.length);
+    createStream(): DataBuffer {
+      return DataBuffer.FromArrayBuffer(this.arrayBuffer);
     }
   }
 
@@ -254,7 +251,7 @@ module Shumway.SWF.Parser {
       var swfVersion = swf.swfVersion;
       var buffer = this._buffer;
       var options = this._options;
-      var stream;
+      var stream: DataBuffer;
 
       var finalBlock = false;
       if (progressInfo) {
@@ -267,30 +264,30 @@ module Shumway.SWF.Parser {
         var PREFETCH_SIZE = 17 /* RECT */ +
           4  /* Frames rate and count */ +
           6  /* FileAttributes */;
-        if (!buffer.push(data, PREFETCH_SIZE))
+        if (!buffer.push(data, PREFETCH_SIZE)) {
           return;
+        }
 
         stream = buffer.createStream();
-        var bytes = stream.bytes;
-        readHeader(bytes, stream, swf, null, null);
+        readHeader(stream, swf, null, null);
 
         // reading FileAttributes tag, this tag shall be first in the file
-        var nextTagHeader = readUi16(bytes, stream);
+        var nextTagHeader = stream.readUnsignedShort();
         var FILE_ATTRIBUTES_LENGTH = 4;
         if (nextTagHeader == ((SwfTag.CODE_FILE_ATTRIBUTES << 6) | FILE_ATTRIBUTES_LENGTH)) {
-          stream.ensure(FILE_ATTRIBUTES_LENGTH);
-          var substream = stream.substream(stream.pos, stream.pos += FILE_ATTRIBUTES_LENGTH);
+          var substream = stream.subbuffer(stream.position, stream.position += FILE_ATTRIBUTES_LENGTH);
           var handler = tagHandler[SwfTag.CODE_FILE_ATTRIBUTES];
           var fileAttributesTag = {code: SwfTag.CODE_FILE_ATTRIBUTES};
-          handler(substream.bytes, substream, fileAttributesTag, swfVersion, SwfTag.CODE_FILE_ATTRIBUTES);
+          handler(substream, fileAttributesTag, swfVersion, SwfTag.CODE_FILE_ATTRIBUTES);
           swf.fileAttributes = fileAttributesTag;
         } else {
-          stream.pos -= 2; // FileAttributes tag was not found -- re-winding
+          stream.position -= 2; // FileAttributes tag was not found -- re-winding
           swf.fileAttributes = {}; // using empty object here, defaults all attributes to false
         }
 
-        if (options.onstart)
+        if (options.onstart) {
           options.onstart(swf);
+        }
 
         swf.tags = [];
 
@@ -304,7 +301,7 @@ module Shumway.SWF.Parser {
       readTags(swf, stream, swfVersion, finalBlock, options.onprogress, options.onexception);
       swf.parseTime += performance.now() - readStartTime;
 
-      var read = stream.pos;
+      var read = stream.position;
       buffer.removeHead(read);
       this._totalRead += read;
 
@@ -376,8 +373,8 @@ module Shumway.SWF.Parser {
 
     function parseSWF(compressed, swfVersion, progressInfo) {
       var stream = buffer.createStream();
-      stream.pos += 4;
-      var fileLength = readUi32(null, stream);
+      stream.position += 4;
+      var fileLength = stream.readUnsignedInt();
       var bodyLength = fileLength - 8;
 
       target = new BodyParser(swfVersion, bodyLength, options);
@@ -426,4 +423,3 @@ module Shumway.SWF.Parser {
     pipe.close();
   }
 }
-
