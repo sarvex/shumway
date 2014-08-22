@@ -269,7 +269,7 @@ module Shumway.SWF.Parser {
         }
 
         stream = buffer.createStream();
-        readHeader(stream, swf, null, null);
+        SWFHeader.FromStream(stream, swf, new SWFParserContext());
 
         // reading FileAttributes tag, this tag shall be first in the file
         var nextTagHeader = stream.readUnsignedShort();

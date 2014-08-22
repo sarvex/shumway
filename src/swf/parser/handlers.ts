@@ -18,6 +18,7 @@
 
 /// <reference path='references.ts'/>
 module Shumway.SWF.Parser {
+  import DataBuffer = Shumway.ArrayUtilities.DataBuffer;
 
   function defineShape($bytes, $stream, output, swfVersion, tagCode) {
     output || (output = {});
@@ -641,20 +642,6 @@ module Shumway.SWF.Parser {
       $3.push($5);
     }
     return $;
-  }
-
-  function bbox($bytes, $stream, $, swfVersion, tagCode) {
-    align($bytes, $stream);
-    var bits = readUb($bytes, $stream, 5);
-    var xMin = readSb($bytes, $stream, bits);
-    var xMax = readSb($bytes, $stream, bits);
-    var yMin = readSb($bytes, $stream, bits);
-    var yMax = readSb($bytes, $stream, bits);
-    $.xMin = xMin;
-    $.xMax = xMax;
-    $.yMin = yMin;
-    $.yMax = yMax;
-    align($bytes, $stream);
   }
 
   function rgb($bytes, $stream): number {
@@ -1445,24 +1432,41 @@ module Shumway.SWF.Parser {
     /* DefineFont4 */                   91: defineFont4
   };
 
-  export function readHeader(stream: DataBuffer, output: any, swfVersion: number, tagCode: number) {
-    output || (output = {});
-    var bbox = output.bbox = {};
-    stream.align();
-    var bits = stream.readUnsignedBits(5);
-    var xMin = stream.readBits(bits);
-    var xMax = stream.readBits(bits);
-    var yMin = stream.readBits(bits);
-    var yMax = stream.readBits(bits);
-    bbox.xMin = xMin;
-    bbox.xMax = xMax;
-    bbox.yMin = yMin;
-    bbox.yMax = yMax;
-    stream.align();
-    var frameRateFraction = stream.readUnsignedByte();
-    output.frameRate = stream.readUnsignedByte() + frameRateFraction / 256;
-    output.frameCount = stream.readUnsignedShort();
-    return output;
+
+  export class RECT {
+    xMin: number;
+    xMax: number;
+    yMin: number;
+    yMax: number;
+    static FromStream(stream: DataBuffer, output: RECT) {
+      output || (output = new RECT());
+      stream.align();
+      var nbits = stream.readUnsignedBits(5);
+      output.xMin = stream.readBits(nbits);
+      output.xMax = stream.readBits(nbits);
+      output.yMin = stream.readBits(nbits);
+      output.yMax = stream.readBits(nbits);
+      stream.align();
+      return output;
+    }
   }
 
+  export class SWFHeader {
+    frameSize: RECT;
+    frameRate: number;
+    frameCount: number;
+    static FromStream(stream: DataBuffer, output: SWFHeader, context: SWFParserContext) {
+      output || (output = new SWFHeader());
+      output.frameSize = RECT.FromStream(stream);
+      var frameRateFraction = stream.readUnsignedByte();
+      output.frameRate = stream.readUnsignedByte() + frameRateFraction / 256;
+      output.frameCount = stream.readUnsignedShort();
+      return output;
+    }
+  }
+
+  export class SWFParserContext {
+    swfVersion: number;
+    tagCode: number;
+  }
 }
