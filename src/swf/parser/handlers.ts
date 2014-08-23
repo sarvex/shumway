@@ -24,19 +24,19 @@ module Shumway.SWF.Parser {
     output || (output = {});
     output.id = readUi16($bytes, $stream);
     var lineBounds = output.lineBounds = {};
-    bbox($bytes, $stream, lineBounds, swfVersion, tagCode);
+    lineBounds = RECT.FromStream(stream);
     var isMorph = output.isMorph = tagCode === 46 || tagCode === 84;
     if (isMorph) {
       var lineBoundsMorph = output.lineBoundsMorph = {};
-      bbox($bytes, $stream, lineBoundsMorph, swfVersion, tagCode);
+      lineBoundsMorph = RECT.FromStream(stream);
     }
     var canHaveStrokes = output.canHaveStrokes = tagCode === 83 || tagCode === 84;
     if (canHaveStrokes) {
       var fillBounds = output.fillBounds = {};
-      bbox($bytes, $stream, fillBounds, swfVersion, tagCode);
+      fillBounds = RECT.FromStream(stream);
       if (isMorph) {
         var fillBoundsMorph = output.fillBoundsMorph = {};
-        bbox($bytes, $stream, fillBoundsMorph, swfVersion, tagCode);
+        fillBoundsMorph = RECT.FromStream(stream);
       }
       output.flags = readUi8($bytes, $stream);
     }
@@ -295,7 +295,7 @@ module Shumway.SWF.Parser {
     $ || ($ = {});
     $.id = readUi16($bytes, $stream);
     var $0 = $.bbox = {};
-    bbox($bytes, $stream, $0, swfVersion, tagCode);
+    $0 = RECT.FromStream(stream);
     var $1 = $.matrix = {};
     matrix($bytes, $stream, $1, swfVersion, tagCode);
     var glyphBits = $.glyphBits = readUi8($bytes, $stream);
@@ -387,7 +387,7 @@ module Shumway.SWF.Parser {
     $ || ($ = {});
     $.id = readUi16($bytes, $stream);
     var $0 = $.bbox = {};
-    bbox($bytes, $stream, $0, swfVersion, tagCode);
+    $0 = RECT.FromStream(stream);
     var flags = readUi16($bytes, $stream);
     var hasText = $.hasText = flags >> 7 & 1;
     $.wordWrap = flags >> 6 & 1;
@@ -524,7 +524,7 @@ module Shumway.SWF.Parser {
       var $54 = glyphCount;
       while ($54--) {
         var $55 = {};
-        bbox($bytes, $stream, $55, swfVersion, tagCode);
+        $55 = RECT.FromStream(stream);
         $53.push($55);
       }
       var kerningCount = readUi16($bytes, $stream);
@@ -617,7 +617,7 @@ module Shumway.SWF.Parser {
     $ || ($ = {});
     $.symbolId = readUi16($bytes, $stream);
     var $0 = $.splitter = {};
-    bbox($bytes, $stream, $0, swfVersion, tagCode);
+    $0 = RECT.FromStream(stream);
     return $;
   }
 
