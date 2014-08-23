@@ -24,7 +24,7 @@ module Shumway.SWF.Parser {
     var tags = context.tags;
     var lastSuccessfulPosition;
 
-    var tag: ISwfTagData = null;
+    var tag: ISWFTagData = null;
     if (context._readTag) {
       tag = context._readTag;
       context._readTag = null;
@@ -65,9 +65,9 @@ module Shumway.SWF.Parser {
         }
 
         var substream = stream.subbuffer(stream.position, stream.position += length);
-        var nextTag: ISwfTagData = { code: tagCode };
+        var nextTag: ISWFTagData = { code: tagCode };
 
-        if (tagCode === SwfTag.CODE_DEFINE_SPRITE) {
+        if (tagCode === SWFTag.DEFINE_SPRITE) {
           nextTag.type = 'sprite';
           nextTag.id = substream.readUnsignedShort();
           nextTag.frameCount = substream.readUnsignedShort()
@@ -274,11 +274,11 @@ module Shumway.SWF.Parser {
         // reading FileAttributes tag, this tag shall be first in the file
         var nextTagHeader = stream.readUnsignedShort();
         var FILE_ATTRIBUTES_LENGTH = 4;
-        if (nextTagHeader == ((SwfTag.CODE_FILE_ATTRIBUTES << 6) | FILE_ATTRIBUTES_LENGTH)) {
+        if (nextTagHeader == ((SWFTag.FILE_ATTRIBUTES << 6) | FILE_ATTRIBUTES_LENGTH)) {
           var substream = stream.subbuffer(stream.position, stream.position += FILE_ATTRIBUTES_LENGTH);
-          var handler = tagHandler[SwfTag.CODE_FILE_ATTRIBUTES];
-          var fileAttributesTag = {code: SwfTag.CODE_FILE_ATTRIBUTES};
-          handler(substream, fileAttributesTag, swfVersion, SwfTag.CODE_FILE_ATTRIBUTES);
+          var handler = tagHandler[SWFTag.FILE_ATTRIBUTES];
+          var fileAttributesTag = {code: SWFTag.FILE_ATTRIBUTES};
+          handler(substream, fileAttributesTag, swfVersion, SWFTag.FILE_ATTRIBUTES);
           swf.fileAttributes = fileAttributesTag;
         } else {
           stream.position -= 2; // FileAttributes tag was not found -- re-winding

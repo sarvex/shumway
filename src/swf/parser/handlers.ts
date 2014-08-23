@@ -23,8 +23,7 @@ module Shumway.SWF.Parser {
   function defineShape($bytes, $stream, output, swfVersion, tagCode) {
     output || (output = {});
     output.id = readUi16($bytes, $stream);
-    var lineBounds = output.lineBounds = {};
-    lineBounds = RECT.FromStream(stream);
+    var lineBounds = output.lineBounds = RECT.FromStream(stream);
     var isMorph = output.isMorph = tagCode === 46 || tagCode === 84;
     if (isMorph) {
       var lineBoundsMorph = output.lineBoundsMorph = {};
@@ -52,8 +51,8 @@ module Shumway.SWF.Parser {
   function placeObject($bytes, $stream, $, swfVersion, tagCode) {
     var flags;
     $ || ($ = {});
-    if (tagCode > SwfTag.CODE_PLACE_OBJECT) {
-      flags = $.flags = tagCode > SwfTag.CODE_PLACE_OBJECT2 ?
+    if (tagCode > SWFTag.PLACE_OBJECT) {
+      flags = $.flags = tagCode > SWFTag.PLACE_OBJECT2 ?
                         readUi16($bytes, $stream) :
                         readUi8($bytes, $stream);
       $.depth = readUi16($bytes, $stream);
@@ -1317,7 +1316,7 @@ module Shumway.SWF.Parser {
       $.depth = readUi16($bytes, $stream);
       var $2 = $.matrix = {};
       matrix($bytes, $stream, $2, swfVersion, tagCode);
-      if (tagCode === SwfTag.CODE_DEFINE_BUTTON2) {
+      if (tagCode === SWFTag.DEFINE_BUTTON2) {
         var $3 = $.cxform = {};
         cxform($bytes, $stream, $3, swfVersion, tagCode);
       }

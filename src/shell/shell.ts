@@ -118,7 +118,7 @@ module Shumway.Shell {
   import ArgumentParser = Shumway.Options.ArgumentParser;
 
   import Runtime = Shumway.AVM2.Runtime;
-  import SwfTag = Shumway.SWF.Parser.SwfTag;
+  import SWFTag = Shumway.SWF.Parser.SWFTag;
   import DataBuffer = Shumway.ArrayUtilities.DataBuffer;
   import flash = Shumway.AVM2.AS.flash;
 
@@ -333,39 +333,39 @@ module Shumway.Shell {
   function parseSymbol(tag, symbols) {
     var symbol;
     switch (tag.code) {
-      case SwfTag.CODE_DEFINE_BITS:
-      case SwfTag.CODE_DEFINE_BITS_JPEG2:
-      case SwfTag.CODE_DEFINE_BITS_JPEG3:
-      case SwfTag.CODE_DEFINE_BITS_JPEG4:
-      case SwfTag.CODE_JPEG_TABLES:
+      case SWFTag.DEFINE_BITS:
+      case SWFTag.DEFINE_BITS_JPEG2:
+      case SWFTag.DEFINE_BITS_JPEG3:
+      case SWFTag.DEFINE_BITS_JPEG4:
+      case SWFTag.JPEG_TABLES:
         symbol = Shumway.SWF.Parser.defineImage(tag, symbols);
         break;
-      case SwfTag.CODE_DEFINE_BITS_LOSSLESS:
-      case SwfTag.CODE_DEFINE_BITS_LOSSLESS2:
+      case SWFTag.DEFINE_BITS_LOSSLESS:
+      case SWFTag.DEFINE_BITS_LOSSLESS2:
         symbol = Shumway.SWF.Parser.defineBitmap(tag);
         break;
-      case SwfTag.CODE_DEFINE_BUTTON:
-      case SwfTag.CODE_DEFINE_BUTTON2:
+      case SWFTag.DEFINE_BUTTON:
+      case SWFTag.DEFINE_BUTTON2:
         // symbol = Shumway.SWF.Parser.defineButton(tag, symbols);
         break;
-      case SwfTag.CODE_DEFINE_EDIT_TEXT:
+      case SWFTag.DEFINE_EDIT_TEXT:
         symbol = Shumway.SWF.Parser.defineText(tag, symbols);
         break;
-      case SwfTag.CODE_DEFINE_FONT:
-      case SwfTag.CODE_DEFINE_FONT2:
-      case SwfTag.CODE_DEFINE_FONT3:
-      case SwfTag.CODE_DEFINE_FONT4:
+      case SWFTag.DEFINE_FONT:
+      case SWFTag.DEFINE_FONT2:
+      case SWFTag.DEFINE_FONT3:
+      case SWFTag.DEFINE_FONT4:
         symbol = Shumway.SWF.Parser.defineFont(tag, symbols);
         break;
-      case SwfTag.CODE_DEFINE_MORPH_SHAPE:
-      case SwfTag.CODE_DEFINE_MORPH_SHAPE2:
-      case SwfTag.CODE_DEFINE_SHAPE:
-      case SwfTag.CODE_DEFINE_SHAPE2:
-      case SwfTag.CODE_DEFINE_SHAPE3:
-      case SwfTag.CODE_DEFINE_SHAPE4:
+      case SWFTag.DEFINE_MORPH_SHAPE:
+      case SWFTag.DEFINE_MORPH_SHAPE2:
+      case SWFTag.DEFINE_SHAPE:
+      case SWFTag.DEFINE_SHAPE2:
+      case SWFTag.DEFINE_SHAPE3:
+      case SWFTag.DEFINE_SHAPE4:
         symbol = Shumway.SWF.Parser.defineShape(tag, symbols);
         break;
-      case SwfTag.CODE_DEFINE_SOUND:
+      case SWFTag.DEFINE_SOUND:
         symbol = Shumway.SWF.Parser.defineSound(tag, symbols);
         break;
       default:
@@ -380,7 +380,7 @@ module Shumway.Shell {
       return false;
     }
     for (var i = 0; i < symbolFilters.length; i++) {
-      var filterCode = SwfTag[symbolFilters[i]];
+      var filterCode = SWFTag[symbolFilters[i]];
       if (filterCode !== undefined && filterCode === code) {
         return false;
       }
@@ -394,7 +394,7 @@ module Shumway.Shell {
       for (var i = 0; i < tags.length; i++) {
         var tag = tags[i];
         allTags.push(tag);
-        if (tag.code === SwfTag.CODE_DEFINE_SPRITE) {
+        if (tag.code === SWFTag.DEFINE_SPRITE) {
           scanTags(tag.tags);
         }
       }
@@ -435,10 +435,10 @@ module Shumway.Shell {
     function traceTag(out, tag): any [] {
       out.push(tag.code);
       switch (tag.code) {
-        case SwfTag.CODE_PLACE_OBJECT2:
-        case SwfTag.CODE_PLACE_OBJECT3:
+        case SWFTag.PLACE_OBJECT2:
+        case SWFTag.PLACE_OBJECT3:
           out.push(tag.flags);
-        case SwfTag.CODE_PLACE_OBJECT:
+        case SWFTag.PLACE_OBJECT:
           out.push(tag.symbolId);
           traceMatrix(out, tag.matrix);
           traceColorTransform(out, tag.cxform);
@@ -454,7 +454,7 @@ module Shumway.Shell {
           traceValue(out, tag.backgroundColor);
           traceValue(out, tag.visibility);
           break;
-        case SwfTag.CODE_REMOVE_OBJECT:
+        case SWFTag.REMOVE_OBJECT:
           traceValue(out, tag.symbolId);
           traceValue(out, tag.depth);
           break;
@@ -481,8 +481,8 @@ module Shumway.Shell {
     var buffers = [];
     if (file.endsWith(".swf")) {
       var fileNameWithoutExtension = fileName.substr(0, fileName.length - 4);
-      var SWF_TAG_CODE_DO_ABC = SwfTag.CODE_DO_ABC;
-      var SWF_TAG_CODE_DO_ABC_ = SwfTag.CODE_DO_ABC_;
+      var SWF_TAG_CODE_DO_ABC = SWFTag.DO_ABC;
+      var SWF_TAG_CODE_DO_ABC_ = SWFTag.DO_ABC_;
       try {
         var buffer = read(file, "binary");
         var startSWF = dateNow();
@@ -505,7 +505,7 @@ module Shumway.Shell {
                   parseSymbol(tag, symbols);
                 }
               }
-              var tagName = SwfTag[tag.code];
+              var tagName = SWFTag[tag.code];
               if (tagName) {
                 tagName = tagName.substring("CODE_".length);
               } else {
