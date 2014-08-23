@@ -613,6 +613,36 @@ module Shumway.ArrayUtilities {
       return this.readBits(size) / 65536;
     }
 
+    readSb(size: number): number {
+      notImplemented("");
+      return 0;
+    }
+
+    readUb(size: number): number {
+      notImplemented("");
+      return 0;
+    }
+
+    readUi16(): number {
+      notImplemented("");
+      return 0;
+    }
+
+    readUi8(): number {
+      notImplemented("");
+      return 0;
+    }
+
+    readFb(size: number): number {
+      notImplemented("");
+      return 0;
+    }
+
+    readUi32(): number {
+      notImplemented("");
+      return 0;
+    }
+
     readString(length?: number): string {
       var position = this._position;
       if (length) {

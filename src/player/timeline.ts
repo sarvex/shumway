@@ -22,7 +22,7 @@ module Shumway.Timeline {
   import Bounds = Shumway.Bounds;
   import ColorUtilities = Shumway.ColorUtilities;
   import flash = Shumway.AVM2.AS.flash;
-  import PlaceObjectFlags = Shumway.SWF.Parser.PlaceObjectFlags;
+  import PlaceObjectFlags = Shumway.SWF.Parser.PlaceFlags;
 
   import ActionScriptVersion = flash.display.ActionScriptVersion;
 
